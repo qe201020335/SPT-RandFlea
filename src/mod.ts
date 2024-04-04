@@ -1,19 +1,35 @@
-import { DependencyContainer } from "tsyringe";
+import { DependencyContainer, Lifecycle } from "tsyringe";
 import { IPreAkiLoadMod } from "@spt-aki/models/external/IPreAkiLoadMod";
+import { Statics } from "./statics";
+import { ILogger } from "@spt-aki/models/spt/utils/ILogger";
+import { ExtendedSaveServer } from "./ExtendedSaveServer";
+import { RandomizedRagfairOfferGenerator } from "./RandomizedRagfairOfferGenerator";
 
 class Mod implements IPreAkiLoadMod
 {
-    // DO NOT leave static references to ANY resolved dependency.
-    // ALWAYS use the container to resolve dependencies
-    // ****** ALWAYS *******
-    private static container: DependencyContainer;
-    
-    // Perform these actions before server fully loads
-    public preAkiLoad(container: DependencyContainer): void 
+    private readonly mod: string
+    private logger: ILogger
+    private container: DependencyContainer;
+
+    constructor()
     {
-        // We will save a reference to the dependency container to resolve dependencies
-        // that we may need down the line
-        Mod.container = container;
+        this.mod = "SkyTweaks";
+    }
+
+    public preAkiLoad(container: DependencyContainer): void
+    {
+        this.container = container;
+        this.logger = container.resolve<ILogger>("WinstonLogger");
+        this.logger.info(`[${this.mod}] preAki Loading... `)
+        Statics.container = container
+
+        container.register<ExtendedSaveServer>("ExtendedSaveServer", ExtendedSaveServer, { lifecycle: Lifecycle.Singleton });
+        container.register("SaveServer", { useToken: "ExtendedSaveServer" });
+        this.logger.success(`[${this.mod}] SaveServer override by ExtendedSaveServer.`)
+
+        container.register<RandomizedRagfairOfferGenerator>("RandomizedRagfairOfferGenerator", RandomizedRagfairOfferGenerator);
+        container.register("RagfairOfferGenerator", { useToken: "RandomizedRagfairOfferGenerator" });
+        this.logger.success(`[${this.mod}] RagfairOfferGenerator override by RandomizedRagfairOfferGenerator.`)
     }
 }
 
