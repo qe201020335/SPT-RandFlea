@@ -88,6 +88,7 @@ export class RandomizedRagfairOfferGenerator extends RagfairOfferGenerator
 
     private generateRandomizedWeapon(parentId: string, tpl: string): Item[]
     {
+        //TODO remove dependency on bot generator and write our own logic
         const botWeaponGenerator: BotWeaponGenerator = Statics.container.resolve<BotWeaponGenerator>("BotWeaponGenerator")
         const botHelper: BotHelper = Statics.container.resolve<BotHelper>("BotHelper")
         const botLevelGenerator: BotLevelGenerator = Statics.container.resolve<BotLevelGenerator>("BotLevelGenerator")
@@ -145,6 +146,7 @@ export class RandomizedRagfairOfferGenerator extends RagfairOfferGenerator
             botLevel
         )
 
-        return weaponGenerationResult.weapon
+        // remove ammo
+        return weaponGenerationResult.weapon.filter(item => !this.itemHelper.isOfBaseclass(item._tpl, BaseClasses.AMMO))
     }
 }
