@@ -2,7 +2,6 @@ import { DependencyContainer, Lifecycle } from "tsyringe";
 import { IPreAkiLoadMod } from "@spt-aki/models/external/IPreAkiLoadMod";
 import { Statics } from "./statics";
 import { ILogger } from "@spt-aki/models/spt/utils/ILogger";
-import { ExtendedSaveServer } from "./ExtendedSaveServer";
 import { RandomizedRagfairOfferGenerator } from "./RandomizedRagfairOfferGenerator";
 
 class Mod implements IPreAkiLoadMod
@@ -22,10 +21,6 @@ class Mod implements IPreAkiLoadMod
         this.logger = container.resolve<ILogger>("WinstonLogger");
         this.logger.info(`[${this.mod}] preAki Loading... `)
         Statics.container = container
-
-        container.register<ExtendedSaveServer>("ExtendedSaveServer", ExtendedSaveServer, { lifecycle: Lifecycle.Singleton });
-        container.register("SaveServer", { useToken: "ExtendedSaveServer" });
-        this.logger.success(`[${this.mod}] SaveServer override by ExtendedSaveServer.`)
 
         container.register<RandomizedRagfairOfferGenerator>("RandomizedRagfairOfferGenerator", RandomizedRagfairOfferGenerator);
         container.register("RagfairOfferGenerator", { useToken: "RandomizedRagfairOfferGenerator" });

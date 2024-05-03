@@ -61,7 +61,6 @@ export class RandomizedRagfairOfferGenerator extends RagfairOfferGenerator
         this.pmcConfig = this.configServer.getConfig(ConfigTypes.PMC);
     }
 
-    public static readonly specialSid = "__random_id__";
 
     protected override async createSingleOfferForItem(itemWithChildren: Item[], isPreset: boolean, itemDetails: [boolean, ITemplateItem]): Promise<void>
     {
@@ -88,6 +87,8 @@ export class RandomizedRagfairOfferGenerator extends RagfairOfferGenerator
 
     private generateRandomizedWeapon(parentId: string, tpl: string): Item[]
     {
+        this.logger.debug(`Generating random weapon for ${tpl}`)
+
         //TODO remove dependency on bot generator and write our own logic
         const botWeaponGenerator: BotWeaponGenerator = Statics.container.resolve<BotWeaponGenerator>("BotWeaponGenerator")
         const botHelper: BotHelper = Statics.container.resolve<BotHelper>("BotHelper")
@@ -97,9 +98,9 @@ export class RandomizedRagfairOfferGenerator extends RagfairOfferGenerator
 
         //randomize weapon mods using bot generation
 
-        const profileSeed = this.randomUtil.getInt(1, 256)
-        const customSid = RandomizedRagfairOfferGenerator.specialSid + profileSeed;
-        const pmcProfile = profileHelper.getPmcProfile(customSid);
+        const sessionId = this.getRandomSid()
+        const pmcProfile = profileHelper.getPmcProfile(sessionId);
+        if (!pmcProfile) throw new Error(`PMC profile not found for ${sessionId}`)
 
         const equipmentSlot = this.randomUtil.getArrayValue([
             EquipmentSlots.FIRST_PRIMARY_WEAPON,
@@ -135,7 +136,7 @@ export class RandomizedRagfairOfferGenerator extends RagfairOfferGenerator
         ).level;
 
         const weaponGenerationResult = botWeaponGenerator.generateWeaponByTpl(
-            customSid,
+            sessionId,
             tpl,
             equipmentSlot,
             inventory,
@@ -148,5 +149,23 @@ export class RandomizedRagfairOfferGenerator extends RagfairOfferGenerator
 
         // remove ammo
         return weaponGenerationResult.weapon.filter(item => !this.itemHelper.isOfBaseclass(item._tpl, BaseClasses.AMMO))
+    }
+
+    private getRandomSid(): string
+    {
+        const saveServer = Statics.container.resolve<SaveServer>("SaveServer")
+        const randomUtil = Statics.container.resolve<RandomUtil>("RandomUtil")
+
+        const ids: string[] = [];
+
+        for (const id in saveServer["profiles"])
+        {
+            ids.push(id)
+        }
+
+        const seed = randomUtil.getInt(1, 256)
+        const randomSid = ids[seed % ids.length]
+
+        return randomSid
     }
 }
